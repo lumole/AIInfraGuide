@@ -287,10 +287,48 @@ html.dark .astro-code span {
   display: flex;
   justify-content: center;
   margin: 1.5em 0;
+  width: 100%;
 }
 
 .mermaid svg {
   max-width: 100%;
   height: auto;
-  max-height: 360px;
+  max-height: 720px;
+}
+
+.prose .source-figure {
+  margin: 1.75rem 0;
+}
+
+.prose .source-figure img {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  padding: 0.5rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+}
+
+.prose .source-figure--compact img {
+  max-height: 680px;
+}
+
+.prose .source-figure--wide img {
+  width: 100%;
+}
+
+.prose .source-figure figcaption {
+  max-width: 58rem;
+  margin: 0.6rem auto 0;
+  color: #6b7280;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.dark .prose .source-figure figcaption {
+  color: #9ca3af;
 }

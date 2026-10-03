@@ -1,9 +1,9 @@
 ---
-title: "vLLM 快速入门：从安装到部署你的第一个 LLM 推理服务"
+title: "3.1 vLLM 快速入门：从安装到第一个推理服务"
 description: "零基础上手 vLLM，掌握离线批量推理与在线 OpenAI 兼容服务部署，理解 PagedAttention 核心原理"
 pubDate: 2026-04-15
 category: "inference-optimization"
-order: 1
+order: 301
 chapter: 3
 tags: ["vLLM", "LLM推理", "PagedAttention", "模型部署", "推理优化"]
 ---
@@ -260,6 +260,11 @@ vllm serve Qwen/Qwen2.5-7B-Instruct \
 ```
 
 💡 **提示**：同样可以通过 `--generation-config vllm` 来禁用 HuggingFace 默认的 generation_config。
+
+<figure id="vllm-v1-process-architecture" class="source-figure">
+  <img src="/AIInfraGuide/images/inference-optimization/vllm-v1-process-tp4.png" alt="vLLM V1 在四张 GPU、张量并行度为 4 时的 API Server、Engine Core 和 GPU Worker 进程架构" />
+  <figcaption>vLLM V1 官方 TP=4 进程示例：API Server 负责输入处理、分词和流式返回，Engine Core 维护调度器与 KV Cache Manager，四个 GPU Worker 执行模型前向。进程数量和连接关系会随 TP、DP 与 API Server 数量变化，不能把本图当作所有部署的固定拓扑。<a href="https://github.com/vllm-project/vllm/blob/faa9860dbda89f8d00f8c9a42fdee0f847363c61/docs/assets/design/arch_overview/v1_process_architecture_tp4.png">图源</a>（Apache-2.0）</figcaption>
+</figure>
 
 ### 5.2 Chat Completions API
 
@@ -542,10 +547,8 @@ vLLM 通过 **PagedAttention** 和 **Continuous Batching** 两大核心技术，
 - 能通过调整 `gpu-memory-utilization` 和 `max-model-len` 解决 OOM 问题
 - 能说出 vLLM 与传统推理方式在显存管理上的核心区别
 
-## 📚 参考资料
+## 📚 阅读路线
 
-- [vLLM 官方文档 - Quickstart](https://docs.vllm.ai/en/stable/getting_started/quickstart.html)
-- [vLLM GitHub 仓库](https://github.com/vllm-project/vllm)
-- [Efficient Memory Management for Large Language Model Serving with PagedAttention（Kwon et al., 2023）](https://arxiv.org/abs/2309.06180)
-- [vLLM 架构概览](https://docs.vllm.ai/en/stable/design/arch_overview.html)
-- [vLLM 特性兼容矩阵](https://docs.vllm.ai/en/stable/features/index.html)
+- **主教程**：[vLLM Quickstart](https://docs.vllm.ai/en/latest/getting_started/quickstart/)：安装、离线推理和 OpenAI-compatible server 的最短可运行路径。
+- **操作核对**：[vLLM OpenAI-Compatible Server](https://docs.vllm.ai/en/latest/serving/openai_compatible_server/) 与 [Engine Arguments](https://docs.vllm.ai/en/latest/configuration/engine_args/)。
+- **下一步**：完成本页后进入 3.2，从一次请求的数据流开始阅读架构；PagedAttention 的完整原理放在第 2 章。
