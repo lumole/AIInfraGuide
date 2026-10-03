@@ -7,9 +7,14 @@ import rehypeExternalLinks from 'rehype-external-links';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 
+const isVercel = process.env.VERCEL === '1';
+const vercelSite = process.env.VERCEL_PROJECT_PRODUCTION_URL
+  ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+  : 'https://all-infra-guide.vercel.app';
+
 export default defineConfig({
-  site: 'https://caomaolufei.github.io',
-  base: '/AIInfraGuide',
+  site: isVercel ? vercelSite : 'https://caomaolufei.github.io',
+  base: isVercel ? '/' : '/AIInfraGuide',
   integrations: [tailwind(), sitemap()],
   experimental: {
     contentLayer: true,
