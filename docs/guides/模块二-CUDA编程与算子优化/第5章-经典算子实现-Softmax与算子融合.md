@@ -9,12 +9,53 @@ tags: ["CUDA", "Softmax", "Online Softmax", "算子融合", "Kernel Fusion"]
 
 ## 本章简介
 
-Softmax 是 Transformer 中最关键的非线性操作之一，也是理解 FlashAttention 的前置知识。本章从数值稳定性问题出发，逐步优化到 Online Softmax，并引入算子融合的思想。
+Softmax 是 Transformer 中最关键的非线性操作之一，也是理解 FlashAttention 的前置知识。本章按“正确性 → 规约 → 扫描次数 → 融合 → 验证”的顺序，把一个看似简单的算子拆成可以测量和优化的 CUDA Kernel。
 
-**Softmax 的数值稳定实现**分析朴素实现的数值溢出问题，引入 Safe Softmax（减最大值技巧），并分析三遍扫描（max → exp-sum → normalize）的性能开销。
+## 学习路径
 
-**Online Softmax**讲解 Online normalizer calculation 原理，推导一遍扫描完成 Softmax 的算法，并在 GPU 上高效实现——这是 FlashAttention 的核心前置知识。
+| 小节 | 你会解决的问题 | 建议产出 |
+| --- | --- | --- |
+| [5.1 CUDA Softmax 朴素实现优化](./51-cuda-softmax-朴素实现优化) | Safe Softmax、Block/Warp 规约和向量化访存怎样逐步优化？ | 朴素、Warp Shuffle、两遍融合四个版本 |
+| [5.2 CUDA Online Softmax 实现](./52-cuda-online-softmax实现) | 如何合并 max 与 sum，为什么最终输出通常仍需再次读取？ | `(m, l)` 合并规约 Kernel |
+| [5.3 CUDA 算子融合实战](./53-cuda算子融合实战) | Scale、Mask、Softmax 为什么适合融合？融合后为什么可能变慢？ | 融合 Kernel、误差和带宽报告 |
 
-**算子融合**解释为什么需要融合（减少 Kernel Launch 和全局内存读写），介绍常见融合模式（Bias + Activation、LayerNorm + Dropout）以及手动融合与编译器自动融合的对比。
+## 本章的核心判断
 
-**动手实验**：实现 Online Softmax CUDA Kernel，将 Softmax + Scale 融合为一个 Kernel 并对比性能。
+1. 先用减最大值保证数值稳定，再讨论性能；
+2. Softmax 的主要成本通常是内存访问，不是加法本身；
+3. Online Softmax 合并的是统计量，不应把“统计量一遍扫描”误写成“输出也只读一遍”；
+4. 算子融合减少中间张量读写和 Kernel launch，但可能增加寄存器压力、分支和维护成本；
+5. 最终用 PyTorch 参考实现、CUDA Event、Nsight Systems 和 Nsight Compute 逐层验证。
+
+## 动手实验顺序
+
+```text
+torch.softmax 参考实现
+        ↓
+单线程/行的正确性基线
+        ↓
+Block 规约 + Warp Shuffle
+        ↓
+Online Softmax 的 (m, l) 合并
+        ↓
+Scale + Mask + Softmax 融合
+        ↓
+比较误差、有效带宽、寄存器、Occupancy 和端到端延迟
+```
+
+建议记录 GPU、CUDA、dtype、输入形状、warmup、重复次数和 commit。不要把某一台机器上的带宽百分比当成所有 GPU 都能复现的结论。
+
+## 章节完成标准
+
+- 能解释 FP16/FP32 Softmax 为什么会溢出，以及减最大值为何保持数学等价；
+- 能用 Warp Shuffle 完成 max/sum 两级规约，并正确处理部分 Warp；
+- 能推导 Online Softmax 的 `(m, l)` 合并公式；
+- 能写出一个带 causal mask 的融合 Softmax，并用 PyTorch 参考实现校验；
+- 能用 Nsight Compute 解释融合后寄存器、带宽和 Occupancy 的变化。
+
+## 参考资料
+
+- [Online normalizer calculation for softmax](https://arxiv.org/abs/1805.02867)
+- [CUDA C++ Programming Guide](https://docs.nvidia.com/cuda/cuda-programming-guide/index.html)
+- [CUDA Best Practices：Memory Optimizations](https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#memory-optimizations)
+- [Triton Fused Softmax Tutorial](https://triton-lang.org/main/getting-started/tutorials/02-fused-softmax.html)
