@@ -11,11 +11,20 @@ tags: ["CUDA", "Softmax", "Online Softmax", "算子融合", "Kernel Fusion"]
 
 Softmax 是 Transformer 中最关键的非线性操作之一，也是理解 FlashAttention 的前置知识。本章按“正确性 → 规约 → 扫描次数 → 融合 → 验证”的顺序，把一个看似简单的算子拆成可以测量和优化的 CUDA Kernel。
 
+## 外部教程优先
+
+| 学习目标 | 推荐教程 | 本章补什么 |
+| --- | --- | --- |
+| 先看完整 Softmax Kernel | [Triton Fused Softmax Tutorial](https://triton-lang.org/main/getting-started/tutorials/02-fused-softmax.html) | 对照到 CUDA Thread/Warp 写法 |
+| 理解 Online Softmax | [Lei Mao：Online Safe Softmax](https://leimao.github.io/blog/Online-Safe-Softmax/) | 补 `(m,l)` 合并和 CUDA 规约 |
+| 判断是否值得融合 | [Making Deep Learning Go Brrrr](https://horace.io/brrr_intro.html) | 补 `scale + mask + softmax` 实测 |
+| 理解访存优化 | [CUDA Best Practices：Memory Optimizations](https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#memory-optimizations) | 补可运行实验和 Nsight 证据 |
+
 ## 学习路径
 
 | 小节 | 你会解决的问题 | 建议产出 |
 | --- | --- | --- |
-| [5.1 CUDA Softmax 朴素实现优化](./51-cuda-softmax-朴素实现优化) | Safe Softmax、Block/Warp 规约和向量化访存怎样逐步优化？ | 朴素、Warp Shuffle、两遍融合四个版本 |
+| [5.1 CUDA Softmax 朴素实现优化](./51-cuda-softmax朴素实现优化) | Safe Softmax、Block/Warp 规约和向量化访存怎样逐步优化？ | 朴素、Warp Shuffle、两遍融合四个版本 |
 | [5.2 CUDA Online Softmax 实现](./52-cuda-online-softmax实现) | 如何合并 max 与 sum，为什么最终输出通常仍需再次读取？ | `(m, l)` 合并规约 Kernel |
 | [5.3 CUDA 算子融合实战](./53-cuda算子融合实战) | Scale、Mask、Softmax 为什么适合融合？融合后为什么可能变慢？ | 融合 Kernel、误差和带宽报告 |
 
@@ -29,18 +38,13 @@ Softmax 是 Transformer 中最关键的非线性操作之一，也是理解 Flas
 
 ## 动手实验顺序
 
-```text
-torch.softmax 参考实现
-        ↓
-单线程/行的正确性基线
-        ↓
-Block 规约 + Warp Shuffle
-        ↓
-Online Softmax 的 (m, l) 合并
-        ↓
-Scale + Mask + Softmax 融合
-        ↓
-比较误差、有效带宽、寄存器、Occupancy 和端到端延迟
+```mermaid
+flowchart TB
+    A["torch.softmax 参考实现"] --> B["单线程/行正确性基线"]
+    B --> C["Block 规约 + Warp Shuffle"]
+    C --> D["Online Softmax 的 (m, l) 合并"]
+    D --> E["Scale + Mask + Softmax 融合"]
+    E --> F["误差 / 带宽 / 寄存器 / Occupancy / 端到端延迟"]
 ```
 
 建议记录 GPU、CUDA、dtype、输入形状、warmup、重复次数和 commit。不要把某一台机器上的带宽百分比当成所有 GPU 都能复现的结论。

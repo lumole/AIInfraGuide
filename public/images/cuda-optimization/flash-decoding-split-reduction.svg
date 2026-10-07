@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560" role="img" aria-labelledby="title desc">
+  <title id="title">Flash-Decoding 的 KV 分片与归约</title>
+  <desc id="desc">一个 Query 同时送入四个 KV 分片，每个分片产生局部 m、l、o，最后稳定归约成输出。</desc>
+  <rect width="1200" height="560" fill="#f8fafc"/>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/>
+    </marker>
+  </defs>
+  <text x="60" y="54" font-family="system-ui, sans-serif" font-size="28" font-weight="600" fill="#111827">Flash-Decoding：沿 KV 长度补足并行度</text>
+  <text x="60" y="88" font-family="system-ui, sans-serif" font-size="17" fill="#475569">每个分片独立扫描 K/V，只写出局部 Online Softmax 状态</text>
+
+  <rect x="55" y="218" width="128" height="88" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+  <text x="119" y="254" text-anchor="middle" font-family="ui-monospace, monospace" font-size="20" font-weight="600" fill="#1e3a8a">Query q</text>
+  <text x="119" y="282" text-anchor="middle" font-family="system-ui, sans-serif" font-size="16" fill="#1e40af">长度 = 1</text>
+
+  <g font-family="system-ui, sans-serif">
+    <rect x="280" y="125" width="215" height="74" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+    <rect x="280" y="220" width="215" height="74" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+    <rect x="280" y="315" width="215" height="74" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+    <rect x="280" y="410" width="215" height="74" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+    <text x="387" y="155" text-anchor="middle" font-size="18" font-weight="600" fill="#14532d">KV split 0</text>
+    <text x="387" y="181" text-anchor="middle" font-size="15" fill="#166534">token 0 … L/4</text>
+    <text x="387" y="250" text-anchor="middle" font-size="18" font-weight="600" fill="#14532d">KV split 1</text>
+    <text x="387" y="276" text-anchor="middle" font-size="15" fill="#166534">token L/4 … L/2</text>
+    <text x="387" y="345" text-anchor="middle" font-size="18" font-weight="600" fill="#14532d">KV split 2</text>
+    <text x="387" y="371" text-anchor="middle" font-size="15" fill="#166534">token L/2 … 3L/4</text>
+    <text x="387" y="440" text-anchor="middle" font-size="18" font-weight="600" fill="#14532d">KV split 3</text>
+    <text x="387" y="466" text-anchor="middle" font-size="15" fill="#166534">token 3L/4 … L</text>
+  </g>
+
+  <g stroke="#475569" stroke-width="2" fill="none" marker-end="url(#arrow)">
+    <path d="M183 250 C220 220 235 167 278 162"/>
+    <path d="M183 260 C225 260 240 257 278 257"/>
+    <path d="M183 270 C220 300 235 350 278 352"/>
+    <path d="M183 280 C210 345 228 440 278 447"/>
+  </g>
+
+  <g font-family="ui-monospace, monospace">
+    <rect x="590" y="125" width="220" height="74" rx="8" fill="#ffedd5" stroke="#ea580c" stroke-width="2"/>
+    <rect x="590" y="220" width="220" height="74" rx="8" fill="#ffedd5" stroke="#ea580c" stroke-width="2"/>
+    <rect x="590" y="315" width="220" height="74" rx="8" fill="#ffedd5" stroke="#ea580c" stroke-width="2"/>
+    <rect x="590" y="410" width="220" height="74" rx="8" fill="#ffedd5" stroke="#ea580c" stroke-width="2"/>
+    <text x="700" y="169" text-anchor="middle" font-size="19" fill="#9a3412">(m₀, l₀, o₀)</text>
+    <text x="700" y="264" text-anchor="middle" font-size="19" fill="#9a3412">(m₁, l₁, o₁)</text>
+    <text x="700" y="359" text-anchor="middle" font-size="19" fill="#9a3412">(m₂, l₂, o₂)</text>
+    <text x="700" y="454" text-anchor="middle" font-size="19" fill="#9a3412">(m₃, l₃, o₃)</text>
+  </g>
+
+  <g stroke="#475569" stroke-width="2" fill="none" marker-end="url(#arrow)">
+    <path d="M495 162 L588 162"/><path d="M495 257 L588 257"/>
+    <path d="M495 352 L588 352"/><path d="M495 447 L588 447"/>
+  </g>
+
+  <rect x="900" y="220" width="240" height="130" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+  <text x="1020" y="258" text-anchor="middle" font-family="system-ui, sans-serif" font-size="19" font-weight="600" fill="#4c1d95">稳定归约</text>
+  <text x="1020" y="289" text-anchor="middle" font-family="ui-monospace, monospace" font-size="17" fill="#5b21b6">max + exp 修正</text>
+  <text x="1020" y="321" text-anchor="middle" font-family="ui-monospace, monospace" font-size="18" fill="#5b21b6">output = o / l</text>
+  <g stroke="#475569" stroke-width="2" fill="none" marker-end="url(#arrow)">
+    <path d="M810 162 C860 162 860 250 898 260"/>
+    <path d="M810 257 L898 276"/>
+    <path d="M810 352 L898 300"/>
+    <path d="M810 447 C860 447 860 330 898 314"/>
+  </g>
+  <text x="60" y="530" font-family="system-ui, sans-serif" font-size="14" fill="#64748b">据 PyTorch / Stanford CRFM Flash-Decoding 教程重绘；示意图不限定具体 kernel 的线程布局。</text>
+</svg>

@@ -11,6 +11,16 @@ tags: ["FlashAttention", "Attention", "Flash-Decoding", "PagedAttention", "CUDA"
 
 Attention 是 Transformer 的核心计算，也是 AI Infra 优化的重中之重。本章先用标准 Attention 和 PyTorch SDPA 建立基线，再沿着“训练/Prefill → Hopper 特化 → Decode/Serving”的顺序理解 FlashAttention 和 KV Cache。
 
+## 外部教程优先
+
+| 学习目标 | 推荐教程 | 本章补什么 |
+| --- | --- | --- |
+| 建立 Attention 可运行基线 | [PyTorch CUDA SDPA Tutorial](https://pytorch.org/tutorials/intermediate/scaled_dot_product_attention_tutorial.html) | 补 backend 验证和误差基线 |
+| 理解 FlashAttention 前向 | [Triton Fused Attention Tutorial](https://triton-lang.org/main/getting-started/tutorials/06-fused-attention.html) | 补小矩阵推导和 CUDA 细节 |
+| 理解 V2/V3 | [FlashAttention-2 作者教程](https://princeton-nlp.github.io/flash-atttention-2/) / [FlashAttention-3 作者教程](https://www.together.ai/blog/flashattention-3) | 补版本边界和实验条件 |
+| 理解 Decode 并行 | [PyTorch：Flash-Decoding](https://pytorch.org/blog/flash-decoding/) | 补局部统计量归约 |
+| 理解 KV Cache 分页 | [vLLM：PagedAttention 教程](https://blog.vllm.ai/2023/06/20/vllm.html) | 补页表寻址与边界实验 |
+
 ## 学习路径
 
 | 小节 | 重点 | 建议产出 |
@@ -18,18 +28,19 @@ Attention 是 Transformer 的核心计算，也是 AI Infra 优化的重中之�
 | [6.1 FlashAttention V1](./61-flashattention-v1详解) | IO-aware、Tiling、Online Softmax、反向重计算 | 手算一个小 tile，并实现简化前向 |
 | [6.2 FlashAttention V2](./62-flashattention-v2详解) | Q 维度并行、循环顺序、Causal block skip | 对比 V1/V2 的并行划分 |
 | [6.3 FlashAttention-3 与 Hopper](./63-flashattention-v3与hopper优化) | TMA、WGMMA、Warp Specialization、FP8 | 在 H100 上跑官方 benchmark |
-| [6.4 Flash-Decoding 与 PagedAttention](./64-flash-decoding与pagedattention) | KV 维度切分、局部统计量合并、Block Table | 验证分页地址和分片归约 |
-| [6.5 PyTorch SDPA 后端选择](./65-pytorch-sdpa后端选择) | Flash/Memory-Efficient/Math backend 与正确性基线 | 记录不同 shape 的实际后端 |
+| [6.4 Flash-Decoding](./64-flash-decoding) | KV 维度切分、局部统计量合并 | 验证不同分片数的结果与开销 |
+| [6.5 PagedAttention](./65-pagedattention与blocktable) | Block Table、分页寻址、GQA 与共享 | 验证乱序物理块的地址映射 |
+| [6.6 PyTorch SDPA 后端选择](./66-pytorch-sdpa后端选择) | Flash/Memory-Efficient/Math backend 与正确性基线 | 记录不同 shape 的实际后端 |
 
 ## 两条必须分开的线
 
 ```mermaid
 flowchart LR
-    A[训练/Prefill<br/>Q 较长] --> B[FlashAttention V1/V2]
-    B --> C[FlashAttention-3<br/>Hopper 异步流水线]
-    D[Decode/Serving<br/>Q 接近 1] --> E[Flash-Decoding]
-    E --> F[PagedAttention/FlashInfer<br/>KV Cache 管理]
-    G[PyTorch SDPA] --> B
+    A["训练/Prefill<br/>Q 较长"] --> B["FlashAttention V1/V2"]
+    B --> C["FlashAttention-3<br/>Hopper 异步流水线"]
+    D["Decode/Serving<br/>Q 接近 1"] --> E["Flash-Decoding<br/>补执行并行度"]
+    D --> F["PagedAttention<br/>管理 KV Cache"]
+    G["PyTorch SDPA"] --> B
     G --> E
 ```
 
@@ -46,6 +57,7 @@ FlashAttention-3 是 Hopper 优化路径，不能把 A100 上的 V1/V2 数据直
 4. 在 A100 上比较 V1/V2；在 H100 上再验证 V3 的 TMA/WGMMA 路径。
 5. 用长度为 1 的 Query 测试 Flash-Decoding 分片和局部 `(m, l, o)` 归约。
 6. 用乱序 Block Table 验证 PagedAttention 的逻辑到物理映射。
+7. 回到 SDPA，记录不同 shape 和 mask 实际选择的后端。
 
 ## 复杂度表述
 

@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 520" role="img" aria-labelledby="title desc">
+  <title id="title">MLIR 多层 Lowering</title>
+  <desc id="desc">模型语义依次经过结构化张量、循环向量、GPU 映射和后端表示，语义逐层减少，硬件细节逐层增加。</desc>
+  <rect width="1200" height="520" fill="#f8fafc"/>
+  <defs>
+    <marker id="mlir-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 0 L10 5 L0 10z" fill="#475569"/>
+    </marker>
+  </defs>
+  <text x="55" y="52" font-family="system-ui, sans-serif" font-size="28" font-weight="600" fill="#111827">多层 IR：在合适的层保留合适的信息</text>
+  <text x="55" y="84" font-family="system-ui, sans-serif" font-size="17" fill="#475569">从领域语义逐步 Lower 到目标代码，而不是一步丢掉所有张量结构</text>
+  <g font-family="system-ui, sans-serif" text-anchor="middle">
+    <rect x="55" y="155" width="190" height="155" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+    <text x="150" y="194" font-size="19" font-weight="600" fill="#1e3a8a">高层语义</text>
+    <text x="150" y="230" font-family="ui-monospace, monospace" font-size="16" fill="#1e40af">toy.matmul</text>
+    <text x="150" y="258" font-family="ui-monospace, monospace" font-size="16" fill="#1e40af">tensor&lt;MxNxf32&gt;</text>
+    <text x="150" y="288" font-size="14" fill="#1d4ed8">shape / operator</text>
+
+    <rect x="350" y="155" width="190" height="155" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+    <text x="445" y="194" font-size="19" font-weight="600" fill="#14532d">结构化计算</text>
+    <text x="445" y="230" font-family="ui-monospace, monospace" font-size="16" fill="#166534">linalg.matmul</text>
+    <text x="445" y="258" font-family="ui-monospace, monospace" font-size="16" fill="#166534">tensor / memref</text>
+    <text x="445" y="288" font-size="14" fill="#15803d">iteration / access</text>
+
+    <rect x="645" y="155" width="190" height="155" rx="8" fill="#ffedd5" stroke="#ea580c" stroke-width="2"/>
+    <text x="740" y="194" font-size="19" font-weight="600" fill="#9a3412">循环与设备</text>
+    <text x="740" y="230" font-family="ui-monospace, monospace" font-size="16" fill="#9a3412">scf / vector</text>
+    <text x="740" y="258" font-family="ui-monospace, monospace" font-size="16" fill="#9a3412">gpu.launch</text>
+    <text x="740" y="288" font-size="14" fill="#c2410c">tile / thread / memory</text>
+
+    <rect x="940" y="155" width="205" height="155" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+    <text x="1042" y="194" font-size="19" font-weight="600" fill="#4c1d95">目标后端</text>
+    <text x="1042" y="230" font-family="ui-monospace, monospace" font-size="16" fill="#5b21b6">nvvm / llvm</text>
+    <text x="1042" y="258" font-family="ui-monospace, monospace" font-size="16" fill="#5b21b6">PTX / object</text>
+    <text x="1042" y="288" font-size="14" fill="#6d28d9">ABI / instruction</text>
+  </g>
+  <g stroke="#475569" stroke-width="2.5" marker-end="url(#mlir-arrow)">
+    <line x1="247" y1="232" x2="345" y2="232"/><line x1="542" y1="232" x2="640" y2="232"/><line x1="837" y1="232" x2="935" y2="232"/>
+  </g>
+  <g font-family="system-ui, sans-serif" font-size="16">
+    <text x="55" y="382" fill="#2563eb">领域与张量语义多</text>
+    <line x1="55" y1="402" x2="1145" y2="402" stroke="#cbd5e1" stroke-width="8"/>
+    <path d="M55 402 L750 402" stroke="#2563eb" stroke-width="8"/>
+    <text x="972" y="382" fill="#7c3aed">硬件约束更具体</text>
+    <line x1="55" y1="452" x2="1145" y2="452" stroke="#cbd5e1" stroke-width="8"/>
+    <path d="M450 452 L1145 452" stroke="#7c3aed" stroke-width="8"/>
+  </g>
+  <text x="55" y="495" font-family="system-ui, sans-serif" font-size="14" fill="#64748b">据 MLIR Toy Tutorial 与官方 Dialect 文档重绘；具体项目可能跳过或增加中间层。</text>
+</svg>
